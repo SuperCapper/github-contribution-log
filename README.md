@@ -1,37 +1,47 @@
 # github-contribution-log
 
-# Contribution [#]: [Issue Title]
+# Contribution #1: Add debug logging of resolved config in train()
 
-**Contribution Number:** [1 / 2 / 3]  
-**Student:** [Your Name]  
-**Issue:** [GitHub issue link]  
-**Status:** [Phase I / Phase II / Phase III / Phase IV] [In Progress / Complete]
+**Contribution Number:** 1  
+**Student:** [David Jones]  
+**Issue:** https://github.com/tinaudio/synth-setter/issues/33
+
+**Status:** Phase I — In Progress
 
 ---
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs explaining why this issue interests you, how it matches your skills/learning goals, what you hope to learn]
+I chose this issue for several reasons that align with my current skillset and learning goals in this course.
 
+First, the issue is a perfect entry point for my first open source contribution. It's small, self-contained, and doesn't require deep domain knowledge of audio synthesis or machine learning. The problem is well-defined: add a single debug logging call in src/train.py. This lets me focus on learning the contribution workflow—cloning the repo, setting up the development environment, running tests, and submitting a PR—without getting overwhelmed by complex code changes.
+
+Second, the issue introduces me to tools and patterns I'll encounter throughout the course. The project uses Hydra for configuration management, which is a common framework in ML research projects. Learning how to use OmegaConf.to_yaml() to dump a resolved config is a small but practical skill: it's exactly the kind of debugging technique I'll need when troubleshooting my own models in the future. According to Hydra's documentation, printing the composed config can be extremely helpful for debugging, as it allows me to see all runtime-resolved values.
+
+Third, the project itself is fascinating. synth-setter tackles synthesizer parameter prediction ("synth inversion")—given an audio recording, it predicts the parameters needed to reproduce that sound. As someone interested in AI for creative applications, I'm excited to contribute to a project at the intersection of machine learning and music technology.
 ---
 
 ## Understanding the Issue
 
 ### Problem Description
 
-[In your own words, what's broken or missing?]
+When debugging test failures or unexpected training behavior in synth-setter, developers currently can't see the exact resolved Hydra configuration without manually adding temporary print statements and re-running their code. This makes it harder to verify that configuration overrides and defaults are being applied correctly, especially when dealing with Hydra's composition system where configs can be merged from multiple files.
 
 ### Expected Behavior
 
-[What should happen?]
+When a developer runs the training script with debug logging enabled (via log_cli_level=DEBUG or -v flags), the full resolved Hydra configuration should be printed to the logs early in the train() function—specifically right after seed setup and before any model instantiation begins. In normal runs (without debug logging), the output should remain quiet.
 
 ### Current Behavior
 
-[What actually happens?]
+Currently, there is no debug logging of the resolved config. Developers who need to inspect the config must manually insert print(OmegaConf.to_yaml(cfg)) or use a debugger, which adds friction to the debugging process and can lead to inconsistent debugging practices across the team.
 
 ### Affected Components
 
-[Which parts of the codebase are involved?]
+src/train.py – The main training script that contains the train() function. The logging call should be inserted around line 61, after seed setup and before model instantiation begins.
+
+Hydra/OmegaConf – The configuration management system used by the project. The change uses OmegaConf.to_yaml(cfg, resolve=True) to dump the resolved configuration in YAML format.
+
+Logging system – The change uses log.debug(), which will only output when debug logging is enabled, keeping normal runs quiet.
 
 ---
 
