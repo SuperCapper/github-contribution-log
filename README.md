@@ -12,13 +12,12 @@
 
 ## Why I Chose This Issue
 
-I chose this issue for several reasons that align with my current skillset and learning goals in this course.
-
-First, the issue is a perfect entry point for my first open source contribution. It's small, self-contained, and doesn't require deep domain knowledge of audio synthesis or machine learning. The problem is well-defined: add a single debug logging call in src/train.py. This lets me focus on learning the contribution workflow—cloning the repo, setting up the development environment, running tests, and submitting a PR—without getting overwhelmed by complex code changes.
+I chose this issue for several reasons that align with my current skillset and learning goals in this course. First, the issue is a perfect entry point for my first open source contribution. It's small, self-contained, and doesn't require deep domain knowledge of audio synthesis or machine learning. The problem is well-defined: add a single debug logging call in src/train.py. This lets me focus on learning the contribution workflow—cloning the repo, setting up the development environment, running tests, and submitting a PR—without getting overwhelmed by complex code changes.
 
 Second, the issue introduces me to tools and patterns I'll encounter throughout the course. The project uses Hydra for configuration management, which is a common framework in ML research projects. Learning how to use OmegaConf.to_yaml() to dump a resolved config is a small but practical skill: it's exactly the kind of debugging technique I'll need when troubleshooting my own models in the future. According to Hydra's documentation, printing the composed config can be extremely helpful for debugging, as it allows me to see all runtime-resolved values.
 
-Third, the project itself is fascinating. synth-setter tackles synthesizer parameter prediction ("synth inversion")—given an audio recording, it predicts the parameters needed to reproduce that sound. As someone interested in AI for creative applications, I'm excited to contribute to a project at the intersection of machine learning and music technology.
+Third, the project is fascinating. synth-setter tackles synthesizer parameter prediction ("synth inversion")-given an audio recording, it predicts the parameters needed to reproduce that sound. As somenone interested in AI for creative applications, I'm excited to contribute to a project at the intersection of machine learning and music technology.
+
 ---
 
 ## Understanding the Issue
