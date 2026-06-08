@@ -18,6 +18,8 @@ Second, the issue introduces me to tools and patterns I'll encounter throughout 
 
 Third, the project is fascinating. synth-setter tackles synthesizer parameter prediction ("synth inversion")-given an audio recording, it predicts the parameters needed to reproduce that sound. As somenone interested in AI for creative applications, I'm excited to contribute to a project at the intersection of machine learning and music technology.
 
+Left a comment on the issue introducing myself and confirming I’d like to work on it. 
+
 ---
 
 ## Understanding the Issue
