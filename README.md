@@ -6,7 +6,7 @@
 **Student:** [David Jones]  
 **Issue:** https://github.com/tinaudio/synth-setter/issues/33
 
-**Status:** Phase I — In Progress
+**Status:** Phase II — In Progress
 
 ---
 
@@ -50,19 +50,47 @@ Logging system – The change uses log.debug(), which will only output when debu
 
 ### Environment Setup
 
-[Notes on setting up your local development environment - challenges you faced, how you solved them]
+The project targets Linux/macOS only (README §Prerequisites). On Windows the
+required path is the VS Code Dev Container (`.devcontainer/cpu/devcontainer.json`),
+which runs `linux/amd64` inside Docker.
+
+**Challenges faced and fixes applied:**
+
+| Challenge | Fix |
+|---|---|
+| First `Reopen in Container` attempt failed with Wayland socket mount error | Disabled `dev.containers.mountWaylandSocket` in VS Code settings |
+| Base image `tinaudio/synth-setter:devcontainer-tools` (18.9 GB) not cached — VS Code timed out | Pulled image manually with `docker pull` first, then reopened |
+| `initialize.sh` failed: `$'\r': command not found` (exit 1) | Shell scripts cloned with Windows CRLF endings; converted all `.sh` files to LF with PowerShell and set `core.autocrlf=false` in repo git config |
+| `postCreateCommand` failed: `/venv/main/bin/python3: bad interpreter: Permission denied` (exit 126) | Non-blocking for Phase II — pre-commit hooks not installed, but container started successfully |
+
+Container confirmed running: `docker ps` shows `vsc-synth-setter-...` with status `Up`.
 
 ### Steps to Reproduce
 
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+The issue is a **missing feature** (absent code path), not a runtime crash.
+Reproduction means confirming the debug call is absent and showing what the
+output gap looks like.
+
+1. Open `src/synth_setter/cli/train.py` in the devcontainer.
+2. Locate the `train()` function (line 110). Observe the sequence after seed
+   setup:
+   ```python
+   if cfg.get("seed"):
+       L.seed_everything(cfg.seed, workers=True)   # line 121
+
+   log.info(f"Instantiating datamodule <{cfg.datamodule._target_}>")  # line 123
+   ```
+3. **Observed:** There is no `log.debug(...)` call between lines 121 and 123.
+   Running `python -m synth_setter.cli.train log_cli_level=DEBUG` produces no
+   resolved-config output in the logs — the developer has no way to see the
+   fully-composed Hydra config without inserting a manual `print()`.
 
 ### Reproduction Evidence
 
-- **Commit showing reproduction:** [Link to commit in your fork]
-- **Screenshots/logs:** [If applicable]
-- **My findings:** [What you discovered during reproduction]
+- **My findings:** The gap is confirmed at lines 121–123 of
+  `src/synth_setter/cli/train.py`. Both prerequisites for the fix (`OmegaConf`
+  imported at line 12, `log = RankedLogger(...)` defined at line 40) are
+  already in scope — no new imports are needed.
 
 ---
 
@@ -70,30 +98,59 @@ Logging system – The change uses log.debug(), which will only output when debu
 
 ### Analysis
 
-[Your analysis of the root cause - what's causing the issue?]
+The `train()` function composes a Hydra `DictConfig` that may merge defaults
+from multiple YAML files plus command-line overrides. Developers currently
+cannot inspect the final resolved values (interpolations expanded, overrides
+applied) without adding a temporary `print()`. The fix is to emit that
+snapshot at `DEBUG` level so it is visible when debug logging is enabled and
+completely silent in normal runs.
 
 ### Proposed Solution
 
-[High-level description of your fix approach]
+Insert one `log.debug` call in `train()` immediately after the seed setup and
+before any object instantiation begins. Use `OmegaConf.to_yaml(cfg,
+resolve=True)` so that all `${...}` interpolations are expanded in the output.
 
 ### Implementation Plan
 
 Using UMPIRE framework (adapted):
 
-**Understand:** [Restate the problem]
+**Understand:** `train()` in `src/synth_setter/cli/train.py` never emits the
+resolved Hydra config at any log level. A developer running with debug logging
+enabled sees no config snapshot, making it hard to verify that overrides and
+defaults composed correctly.
 
-**Match:** [What similar patterns/solutions exist in the codebase?]
+**Match:** The file already uses `log.info(...)` for every major step. The
+`log` object is a `RankedLogger` (rank-zero-only stdlib `logging` wrapper).
+`OmegaConf.to_yaml(cfg, resolve=True)` is the standard Hydra idiom for
+dumping a resolved config. Both are already imported and in scope.
 
-**Plan:** [Step-by-step implementation plan]
-1. [Modify file X to do Y]
-2. [Add function Z]
-3. [Update tests]
+**Plan:**
+1. In `src/synth_setter/cli/train.py`, after line 121 (`L.seed_everything`)
+   and before line 123 (the first `log.info`), insert:
+   ```python
+   log.debug("Resolved Hydra config:\n%s", OmegaConf.to_yaml(cfg, resolve=True))
+   ```
+2. Add a unit test in `tests/` that patches `log.debug`, calls `train()` with
+   a minimal mock config, and asserts `log.debug` was called with a string
+   containing the YAML representation of the config.
+3. Run `make test-fast` to confirm no regressions.
+4. Run `make format` to pass pre-commit (ruff, pydoclint, gitlint).
 
-**Implement:** [Link to your branch/commits as you work]
+**Implement:** Branch `feat/debug-log-resolved-config` — link to commits added
+here as work progresses.
 
-**Review:** [Self-review checklist - does it follow the project's contribution guidelines?]
+**Review:**
+- [ ] Single-line change only — no scope creep
+- [ ] `resolve=True` used so interpolations are expanded
+- [ ] `log.debug` (not `print` or `log.info`) — silent in normal runs
+- [ ] Conventional commit title: `internal-feat(train): log resolved Hydra cfg at DEBUG`
+- [ ] No `Co-Authored-By` trailer (blocked by repo pre-commit hook)
+- [ ] `make format` passes (ruff, pydoclint, gitlint)
 
-**Evaluate:** [How will you verify it works?]
+**Evaluate:** Run training with `log_cli_level=DEBUG` (or `pytest -s` with the
+new test). The resolved YAML config should appear in the log output immediately
+after seed setup and before the first `Instantiating datamodule` line.
 
 ---
 
@@ -101,9 +158,9 @@ Using UMPIRE framework (adapted):
 
 ### Unit Tests
 
-- [ ] Test case 1: [Description]
-- [ ] Test case 2: [Description]
-- [ ] Test case 3: [Description]
+- [ ] Test case 1: `test_train_logs_resolved_cfg_at_debug_when_debug_enabled` — patch `log.debug`, call `train()` with a minimal mock config, assert `log.debug` was called with a string containing `OmegaConf.to_yaml` output
+- [ ] Test case 2: `test_train_does_not_log_cfg_at_info` — assert `log.info` was NOT called with the config YAML (config dump must be debug-only)
+- [ ] Test case 3: `test_train_cfg_debug_log_fires_after_seed_before_datamodule` — assert the debug call order relative to `seed_everything` and `hydra.utils.instantiate`
 
 ### Integration Tests
 
