@@ -87,14 +87,60 @@ output gap looks like.
 
 ### Reproduction Evidence
 
+- **Working branch:** https://github.com/SuperCapper/synth-setter/tree/fix-issue-33
 - **My findings:** The gap is confirmed at lines 121–123 of
   `src/synth_setter/cli/train.py`. Both prerequisites for the fix (`OmegaConf`
   imported at line 12, `log = RankedLogger(...)` defined at line 40) are
   already in scope — no new imports are needed.
 
+**Step 3 answers:**
+
+- **What I expected to happen:** Running `python -m synth_setter.cli.train log_cli_level=DEBUG`
+  should print the fully-resolved Hydra config (all `${...}` interpolations
+  expanded, all overrides applied) to the log immediately after seed setup and
+  before any object is instantiated.
+- **What actually happened:** No config output appears at any log level. The
+  gap between seed setup (line 121) and the first `log.info` (line 123) is
+  empty — there is no `log.debug` call.
+- **Files involved:** `src/synth_setter/cli/train.py` (only file that needs to
+  change). Relevant test file: `tests/test_train.py` (where new assertions will
+  be added).
+- **Where to look:** `train()` function, lines 119–123 — the block between
+  `L.seed_everything` and the first `log.info`.
+
 ---
 
 ## Solution Approach
+
+### Step 4 — Four Questions
+
+**1. Root cause?**
+There is no `log.debug` call in `train()` that dumps the resolved config.
+The function composes a Hydra `DictConfig` from multiple YAML files plus
+command-line overrides, but never logs the final merged result. The
+responsible gap is in `src/synth_setter/cli/train.py`, `train()` function,
+between lines 121 and 123 — after `L.seed_everything` and before the first
+`log.info`.
+
+**2. Proposed fix?**
+I will add one `log.debug` call in `train()`, immediately after the seed
+setup block and before any object is instantiated, that emits the fully
+resolved Hydra config as YAML:
+```python
+log.debug("Resolved Hydra config:\n%s", OmegaConf.to_yaml(cfg, resolve=True))
+```
+Both `OmegaConf` and `log` are already imported — no new dependencies.
+
+**3. Files to modify:**
+- `src/synth_setter/cli/train.py` — insert the one-line debug call
+- `tests/test_train.py` — add assertions that the debug call fires with the correct content
+
+**4. How will I verify it works?**
+- Write a unit test that patches `log.debug`, calls `train()` with a minimal
+  mock config, and asserts the call was made with a string containing the
+  YAML representation of the config.
+- Run `make test-fast` (CPU-only fast tests) to confirm no regressions.
+- Run `make format` to pass ruff, pydoclint, and gitlint pre-commit checks.
 
 ### Analysis
 
@@ -137,8 +183,7 @@ dumping a resolved config. Both are already imported and in scope.
 3. Run `make test-fast` to confirm no regressions.
 4. Run `make format` to pass pre-commit (ruff, pydoclint, gitlint).
 
-**Implement:** Branch `feat/debug-log-resolved-config` — link to commits added
-here as work progresses.
+**Implement:** https://github.com/SuperCapper/synth-setter/tree/fix-issue-33 — commits added here as work progresses.
 
 **Review:**
 - [ ] Single-line change only — no scope creep
