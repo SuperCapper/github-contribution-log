@@ -234,15 +234,26 @@ Implemented the one-line fix from the Phase II plan. The core change in `src/syn
 
 ## Pull Request
 
-**PR Link:** [GitHub PR URL when submitted]
+**PR Link:** https://github.com/tinaudio/synth-setter/pull/1755
 
-**PR Description:** [Draft or final PR description - much of the content above can be adapted]
+**PR Description:**
+
+**What does this PR do?** Adds a single `log.debug` call in `train()` that emits the fully-resolved Hydra config immediately after seed setup and before any object is instantiated. Uses `OmegaConf.to_yaml(cfg, resolve=True)` so all `${...}` interpolations are expanded. Falls back to `resolve=False` if resolution fails (e.g. unresolvable internal Hydra keys in test fixtures). The call is gated by `log.debug`, so normal runs without debug logging enabled remain completely silent.
+
+**Why was this PR needed?** Issue #33 identified that developers debugging training failures had no way to inspect the final composed Hydra config without inserting a manual `print()` statement. Running with `log_cli_level=DEBUG` should be sufficient.
+
+**What are the relevant issue numbers?** Closes #33
+
+**Does this PR meet the acceptance criteria?**
+- [x] Tests added for new/changed behavior
+- [x] All tests passing (`make test-fast`: 2022 passed, 5 skipped; 2 pre-existing failures unrelated to this change)
+- [x] Follows project style guide (conventional commits, `# noqa: BLE001` pattern, `RankedLogger`)
+- [x] No breaking changes introduced
 
 **Maintainer Feedback:**
-- [Date]: [Summary of feedback received]
-- [Date]: [How you addressed it]
+- *(awaiting review)*
 
-**Status:** [Awaiting review / Iterating / Approved / Merged]
+**Status:** Awaiting review
 
 ---
 
@@ -250,20 +261,30 @@ Implemented the one-line fix from the Phase II plan. The core change in `src/syn
 
 ### Technical Skills Gained
 
-[What you learned technically]
+The most concrete skill gained was understanding how to isolate a unit test from a complex fixture. The `cfg_train` fixture in this project includes `return_hydra_config=True`, which injects internal Hydra keys (`hydra.job.num`, `hydra.sweep.subdir`) set to `???`. Calling `OmegaConf.to_yaml(cfg, resolve=True)` on that fixture raises an exception — not because the production code is wrong, but because the test environment is missing runtime state that Hydra would normally supply. The fix was to mock `OmegaConf.to_yaml` in the train module rather than trying to pre-resolve the fixture, which is the right unit-test isolation boundary: test that the function is called with the right arguments, not that OmegaConf itself works correctly.
+
+I also learned how to navigate a large, well-structured ML codebase. Reading `_log_model_artifact` to see how they handle wandb exceptions (the `# noqa: BLE001` pattern) told me exactly how to handle the fallback in the fix. The existing code was the best documentation.
 
 ### Challenges Overcome
 
-[What was hard and how you solved it]
+The biggest challenge was the test fixture. Three iterations were needed before the test was correct:
+1. Pre-computing `OmegaConf.to_yaml(cfg_train)` before calling `train()` failed because the fixture has unresolvable Hydra-internal interpolations.
+2. Adding `run_name = "test"` to the fixture resolved one key but not `hydra.job.num`.
+3. The final approach — mocking `OmegaConf.to_yaml` at the module level — was the right answer. It tests the contract (the function is called with `resolve=True` and the result is logged) without trying to exercise OmegaConf's resolution engine on a fixture it can't fully populate.
+
+The rebase also required manual conflict resolution: the upstream `train.py` had grown significantly (adding `_derive_checkpoint_uri`, `_upload_best_checkpoint`, `_has_wandb_logger`) since the branch was originally cut. The patch had to be re-applied by hand to the new version of the file.
 
 ### What I'd Do Differently Next Time
 
-[Reflection on your process]
+Rebase onto upstream more frequently during development rather than once at submission time. The conflict arose because the branch drifted far from upstream while I was working. A daily `git fetch upstream && git rebase upstream/main` would have caught the divergence when the upstream changes were smaller and easier to reconcile.
+
+I'd also check the test fixture's actual structure before writing the test — reading `conftest.py` first would have revealed the `return_hydra_config=True` flag immediately and saved two failed test iterations.
 
 ---
 
 ## Resources Used
 
-- [Link to helpful documentation]
-- [Tutorial or Stack Overflow post that helped]
-- [GitHub issues or discussions that helped]
+- [Hydra documentation: Structured Configs](https://hydra.cc/docs/tutorials/structured_config/intro/) — for understanding `OmegaConf.to_yaml` and `resolve=True`
+- [OmegaConf API reference](https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#omegaconf-to-yaml) — confirmed `resolve=True` is the correct kwarg
+- [tinaudio/synth-setter issue #33](https://github.com/tinaudio/synth-setter/issues/33) — issue thread where I introduced myself and confirmed the approach
+- [GitHub docs: Creating a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
