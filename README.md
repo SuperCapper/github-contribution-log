@@ -288,3 +288,156 @@ I'd also check the test fixture's actual structure before writing the test — r
 - [OmegaConf API reference](https://omegaconf.readthedocs.io/en/2.3_branch/usage.html#omegaconf-to-yaml) — confirmed `resolve=True` is the correct kwarg
 - [tinaudio/synth-setter issue #33](https://github.com/tinaudio/synth-setter/issues/33) — issue thread where I introduced myself and confirmed the approach
 - [GitHub docs: Creating a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
+
+---
+
+# Contribution #2: docs: add Architecture Decision Records (ADR) directory
+
+**Contribution Number:** 2  
+**Student:** [David Jones]  
+**Issue:** https://github.com/vineethwilson15/codemind/issues/32
+
+**Status:** Phase I — In Progress
+
+---
+
+## Why I Chose This Issue
+
+I chose this issue because it's a low-risk way to get familiar with codemind's architecture before attempting any code changes. Writing an ADR forces me to actually understand *why* a design decision was made, not just what the code does — which is a much better on-ramp into an unfamiliar codebase than jumping straight into a bug fix.
+
+Specifically, the three ADRs requested (dual-store design, local-first LLM default, atomic dual-write invariant) touch the core architecture of the project: how Neo4j and Qdrant are used together, why Ollama/codellama is the default LLM rather than a hosted API, and the `_write_atomically()` invariant that presumably keeps the two stores in sync. Documenting these gives me a map of the system's key design tradeoffs before I try to modify any of it. It's also labeled "good first issue," so it's a reasonable entry point for introducing myself to the maintainer.
+
+---
+
+## Understanding the Issue
+
+### Problem Description
+
+codemind's Phase 1 architecture made several significant design decisions (combining Neo4j and Qdrant as a dual-store, defaulting to a local-first LLM via Ollama/codellama, and using an atomic dual-write pattern to keep the two stores consistent) but none of these decisions are documented anywhere. There's no `docs/adr/` directory, so new contributors have no record of the rationale, alternatives considered, or tradeoffs behind these choices.
+
+### Expected Behavior
+
+A `docs/adr/` directory should exist containing three ADRs, each following the MADR (Markdown Architecture Decision Records) lightweight format with Status, Context, Decision, and Consequences sections:
+
+1. `ADR-001-dual-store-design.md` — why Neo4j + Qdrant are used together
+2. `ADR-002-local-first-llm.md` — why Ollama/codellama is the default LLM
+3. `ADR-003-atomic-dual-write.md` — the `_write_atomically()` invariant
+
+### Current Behavior
+
+No `docs/adr/` directory exists in the repository, and these design decisions live only in code and (presumably) the maintainer's head.
+
+### Affected Components
+
+- `docs/adr/` — new directory to be created, containing the three ADR files
+- No source code is affected; this is a documentation-only contribution
+
+---
+
+## Reproduction Process
+
+### Environment Setup
+
+*Not yet started — will document once I clone the repo and confirm what's needed to build/preview the docs (if anything).*
+
+### Steps to Reproduce
+
+*N/A — this is a documentation gap, not a runtime bug. "Reproducing" the issue means confirming `docs/adr/` does not currently exist in the repo.*
+
+### Reproduction Evidence
+
+- **Commit showing reproduction:** *TBD*
+- **My findings:** *TBD — will confirm the dual-store, local-first-LLM, and atomic dual-write implementations in the source before writing each ADR's Context/Decision sections.*
+
+---
+
+## Solution Approach
+
+### Analysis
+
+*TBD — need to read the relevant source (store integration code, LLM client config, and `_write_atomically()`) to accurately describe the Context and Decision for each ADR.*
+
+### Proposed Solution
+
+Create `docs/adr/` with the three requested ADRs, each using the MADR format (Status, Context, Decision, Consequences), grounded in the actual implementation rather than assumptions.
+
+### Implementation Plan
+
+Using UMPIRE framework (adapted):
+
+**Understand:** The project lacks documented rationale for three Phase 1 architecture decisions: the dual-store design, the local-first LLM default, and the atomic dual-write invariant.
+
+**Match:** *TBD — check if the project already has any documentation conventions or an existing ADR template to match.*
+
+**Plan:**
+1. Clone the repo and locate the code backing each decision (store clients, LLM client/config, `_write_atomically()`)
+2. Create `docs/adr/ADR-001-dual-store-design.md`
+3. Create `docs/adr/ADR-002-local-first-llm.md`
+4. Create `docs/adr/ADR-003-atomic-dual-write.md`
+5. Open a PR referencing issue #32
+
+**Implement:** *Not started — link to branch/commits once work begins.*
+
+**Review:** *TBD — self-review checklist once drafted.*
+
+**Evaluate:** *TBD — likely verified via maintainer review since this is docs-only (no automated tests apply).*
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+- N/A — documentation-only change
+
+### Integration Tests
+
+- N/A — documentation-only change
+
+### Manual Testing
+
+*TBD — will proofread each ADR against the actual source code to confirm accuracy before opening the PR.*
+
+---
+
+## Implementation Notes
+
+### Phase I Progress
+
+Selected the issue, reviewed the issue description and labels, and confirmed it requires no local dev environment beyond cloning the repo and reading source. Next step is cloning `vineethwilson15/codemind` and reading the dual-store/LLM/dual-write code before drafting the ADRs.
+
+---
+
+## Pull Request
+
+**PR Link:** *Not yet submitted*
+
+**PR Description:** *TBD*
+
+**Maintainer Feedback:**
+- *None yet*
+
+**Status:** Not started
+
+---
+
+## Learnings & Reflections
+
+### Technical Skills Gained
+
+*TBD*
+
+### Challenges Overcome
+
+*TBD*
+
+### What I'd Do Differently Next Time
+
+*TBD*
+
+---
+
+## Resources Used
+
+- [MADR: Markdown Architecture Decision Records](https://adr.github.io/madr/) — the format required by the issue
+- [vineethwilson15/codemind issue #32](https://github.com/vineethwilson15/codemind/issues/32) — the issue itself
