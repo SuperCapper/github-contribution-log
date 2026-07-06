@@ -297,7 +297,7 @@ I'd also check the test fixture's actual structure before writing the test — r
 **Student:** [David Jones]  
 **Issue:** https://github.com/vineethwilson15/codemind/issues/32
 
-**Status:** Phase I — In Progress
+**Status:** Phase III — Awaiting Review
 
 ---
 
@@ -346,8 +346,12 @@ No `docs/adr/` directory exists in the repository, and these design decisions li
 
 ### Reproduction Evidence
 
-- **Commit showing reproduction:** *TBD*
-- **My findings:** *TBD — will confirm the dual-store, local-first-LLM, and atomic dual-write implementations in the source before writing each ADR's Context/Decision sections.*
+- **Commit showing reproduction:** N/A — confirmed by inspection that no `docs/adr/` directory existed in `vineethwilson15/codemind` prior to this contribution.
+- **My findings:** Read `core/graph/__init__.py`, `core/indexer/__init__.py`, and `core/config.py` in full. Confirmed all three architecture decisions were implemented but undocumented:
+  - Neo4j (`GraphClient`) holds structural graph data (`File`/`Function`/`Class`/`Module` nodes, `DEFINES`/`CALLS`/`IMPORTS`/`DEPENDS_ON` relationships), all writes via `MERGE`.
+  - Qdrant holds vector embeddings keyed by a deterministic ID (`sha256(path) % 2**63`) for idempotent upserts.
+  - `RepoIndexer._write_atomically()` writes Neo4j then Qdrant, compensating with a Neo4j delete if the Qdrant write fails — with a known gap if that compensating delete itself fails.
+  - `CONTRIBUTING.md`'s enforced rule table ("Always write Neo4j and Qdrant together", "All Neo4j writes must use MERGE") independently corroborated the invariant found in code.
 
 ---
 
@@ -355,11 +359,11 @@ No `docs/adr/` directory exists in the repository, and these design decisions li
 
 ### Analysis
 
-*TBD — need to read the relevant source (store integration code, LLM client config, and `_write_atomically()`) to accurately describe the Context and Decision for each ADR.*
+The project had never established a `docs/` or ADR convention, so this contribution both documents the three decisions and sets the pattern (MADR format) for any future ADRs.
 
 ### Proposed Solution
 
-Create `docs/adr/` with the three requested ADRs, each using the MADR format (Status, Context, Decision, Consequences), grounded in the actual implementation rather than assumptions.
+Created `docs/adr/` with the three requested ADRs, each using the MADR format (Status, Context, Decision, Consequences), grounded in the actual implementation rather than assumptions.
 
 ### Implementation Plan
 
@@ -367,7 +371,7 @@ Using UMPIRE framework (adapted):
 
 **Understand:** The project lacks documented rationale for three Phase 1 architecture decisions: the dual-store design, the local-first LLM default, and the atomic dual-write invariant.
 
-**Match:** *TBD — check if the project already has any documentation conventions or an existing ADR template to match.*
+**Match:** No existing ADR template or `docs/` convention existed in the repo. `CONTRIBUTING.md`'s architecture rules table was the closest existing artifact, and directly corroborated what the code showed.
 
 **Plan:**
 1. Clone the repo and locate the code backing each decision (store clients, LLM client/config, `_write_atomically()`)
@@ -376,11 +380,16 @@ Using UMPIRE framework (adapted):
 4. Create `docs/adr/ADR-003-atomic-dual-write.md`
 5. Open a PR referencing issue #32
 
-**Implement:** *Not started — link to branch/commits once work begins.*
+**Implement:** https://github.com/SuperCapper/codemind/tree/docs/add-adr-directory
 
-**Review:** *TBD — self-review checklist once drafted.*
+**Review:**
+- [x] Docs-only change — no source files touched
+- [x] MADR format (Status/Context/Decision/Consequences) used throughout
+- [x] Each decision traced to specific files/functions, not asserted from assumption
+- [x] Known gap (compensating-delete failure in `_write_atomically`) called out explicitly rather than glossed over
+- [x] Conventional commit title: `docs: add Architecture Decision Records directory`
 
-**Evaluate:** *TBD — likely verified via maintainer review since this is docs-only (no automated tests apply).*
+**Evaluate:** Verified accuracy by cross-referencing each ADR's Decision/Consequences against `core/graph/__init__.py`, `core/indexer/__init__.py`, `core/config.py`, and `CONTRIBUTING.md`. No automated tests apply (documentation-only); final evaluation is maintainer review on the PR.
 
 ---
 
@@ -404,20 +413,43 @@ Using UMPIRE framework (adapted):
 
 ### Phase I Progress
 
-Selected the issue, reviewed the issue description and labels, and confirmed it requires no local dev environment beyond cloning the repo and reading source. Next step is cloning `vineethwilson15/codemind` and reading the dual-store/LLM/dual-write code before drafting the ADRs.
+Selected the issue, reviewed the issue description and labels, and confirmed it requires no local dev environment beyond cloning the repo and reading source.
+
+### Phase II Progress
+
+Cloned `SuperCapper/codemind` (fork) and read `core/graph/__init__.py`, `core/indexer/__init__.py`, and `core/config.py` to ground each ADR in the actual implementation rather than assumptions. Cross-checked findings against `CONTRIBUTING.md`'s enforced architecture rules table, which independently confirmed the dual-write invariant.
+
+### Phase III Progress
+
+Drafted all three ADRs in `docs/adr/` on branch `docs/add-adr-directory`, committed, and pushed to the fork. Opened PR against `vineethwilson15/codemind:master`.
+
+### Code Changes
+
+- **Files added:** `docs/adr/ADR-001-dual-store-design.md`, `docs/adr/ADR-002-local-first-llm.md`, `docs/adr/ADR-003-atomic-dual-write.md`
+- **Key commits:** `0e9f19e` — `docs: add Architecture Decision Records directory`
+- **Branch:** https://github.com/SuperCapper/codemind/tree/docs/add-adr-directory
+- **Approach decisions:** Called out the `_write_atomically()` compensating-delete failure gap explicitly in ADR-003's Consequences rather than only documenting the happy path, since it's the most likely thing a future contributor would need to know before touching that code.
 
 ---
 
 ## Pull Request
 
-**PR Link:** *Not yet submitted*
+**PR Link:** https://github.com/vineethwilson15/codemind/pull/48
 
-**PR Description:** *TBD*
+**PR Description:**
+
+**Summary:** Adds `docs/adr/` with three MADR-format Architecture Decision Records documenting Phase 1 design decisions: the Neo4j/Qdrant dual-store split, the local-first Ollama/codellama LLM default, and the atomic dual-write invariant in `RepoIndexer._write_atomically()`.
+
+**Motivation / linked issue:** Closes #32
+
+**Type of change:** Documentation
+
+**Testing notes:** No automated tests apply — documentation-only change (3 new files under `docs/adr/`, no source touched). Verified accuracy by cross-referencing each ADR against `core/graph/__init__.py`, `core/indexer/__init__.py`, `core/config.py`, and `CONTRIBUTING.md`'s enforced rules table.
 
 **Maintainer Feedback:**
-- *None yet*
+- *(awaiting review)*
 
-**Status:** Not started
+**Status:** Awaiting review
 
 ---
 
