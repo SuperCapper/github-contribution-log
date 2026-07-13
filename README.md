@@ -447,9 +447,10 @@ Drafted all three ADRs in `docs/adr/` on branch `docs/add-adr-directory`, commit
 **Testing notes:** No automated tests apply — documentation-only change (3 new files under `docs/adr/`, no source touched). Verified accuracy by cross-referencing each ADR against `core/graph/__init__.py`, `core/indexer/__init__.py`, `core/config.py`, and `CONTRIBUTING.md`'s enforced rules table.
 
 **Maintainer Feedback:**
-- *(awaiting review)*
+- CodeRabbit (automated) reviewed the PR on 2026-07-06 and approved: all three ADRs correctly cover the Phase 1 decisions requested in #32, no out-of-scope changes, title accurately describes the change. All 5 pre-merge checks passed.
+- Human maintainer (vineethwilson15) review still pending.
 
-**Status:** Awaiting review
+**Status:** Awaiting review (automated review passed; awaiting human maintainer review)
 
 ---
 
