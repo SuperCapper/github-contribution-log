@@ -438,11 +438,18 @@ Drafted all three ADRs in `docs/adr/` on branch `docs/add-adr-directory`, commit
 
 **PR Description:**
 
-**Summary:** Adds `docs/adr/` with three MADR-format Architecture Decision Records documenting Phase 1 design decisions: the Neo4j/Qdrant dual-store split, the local-first Ollama/codellama LLM default, and the atomic dual-write invariant in `RepoIndexer._write_atomically()`.
+**Why was this PR needed?** codemind's Phase 1 architecture made several significant design decisions (combining Neo4j and Qdrant as a dual-store, defaulting to a local-first LLM via Ollama/codellama, and using an atomic dual-write pattern to keep the two stores consistent) but none of these decisions are documented anywhere. New contributors have no record of the rationale, alternatives considered, or tradeoffs behind these choices. Closes #32.
 
-**Motivation / linked issue:** Closes #32
+**What does this PR do?** Adds `docs/adr/` with three MADR-format Architecture Decision Records documenting Phase 1 design decisions: the Neo4j/Qdrant dual-store split, the local-first Ollama/codellama LLM default, and the atomic dual-write invariant in `RepoIndexer._write_atomically()`.
 
 **Type of change:** Documentation
+
+**Does this PR meet the acceptance criteria?**
+- [x] Tests added / updated — `pytest tests/unit/` passes locally (N/A — docs-only change, no code touched)
+- [x] `ruff check . && ruff format .` passes (N/A — no Python files changed)
+- [x] `_write_atomically()` still writes to both Neo4j and Qdrant (N/A — indexer not modified, only documented)
+- [x] No secrets, API keys or real file paths in the diff
+- [x] `CONTRIBUTING.md` read
 
 **Testing notes:** No automated tests apply — documentation-only change (3 new files under `docs/adr/`, no source touched). Verified accuracy by cross-referencing each ADR against `core/graph/__init__.py`, `core/indexer/__init__.py`, `core/config.py`, and `CONTRIBUTING.md`'s enforced rules table.
 
