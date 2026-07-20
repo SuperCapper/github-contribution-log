@@ -297,7 +297,7 @@ I'd also check the test fixture's actual structure before writing the test — r
 **Student:** [David Jones]  
 **Issue:** https://github.com/vineethwilson15/codemind/issues/32
 
-**Status:** Phase III — Awaiting Review
+**Status:** Phase IV — Complete
 
 ---
 
@@ -405,7 +405,7 @@ Using UMPIRE framework (adapted):
 
 ### Manual Testing
 
-*TBD — will proofread each ADR against the actual source code to confirm accuracy before opening the PR.*
+Proofread each ADR against the actual source code before and after opening the PR. Second pass (post-approval) re-diffed ADR-001 and ADR-002 line-by-line against `core/graph/__init__.py`, `core/indexer/__init__.py`, `core/config.py`, `docker-compose.yml`, and `requirements.txt` to confirm nothing had drifted between drafting the ADRs and merge. Confirmed: node labels/relationship types in `GraphClient`'s docstring match ADR-001 exactly; `_deterministic_id`'s `sha256(path) % 2**63` matches; `core/config.py` defaults (`LLM_PROVIDER=ollama`, `OLLAMA_MODEL=codellama`, `EMBED_MODEL=all-MiniLM-L6-v2`) match ADR-002 exactly; `docker-compose.yml` still only provisions Neo4j + Qdrant, so ADR-002's stated gap (Ollama not bundled) is still accurate.
 
 ---
 
@@ -448,6 +448,7 @@ Drafted all three ADRs in `docs/adr/` on branch `docs/add-adr-directory`, commit
 
 **Maintainer Feedback:**
 - CodeRabbit (automated) reviewed the PR on 2026-07-06 and approved: all three ADRs correctly cover the Phase 1 decisions requested in #32, no out-of-scope changes, title accurately describes the change. All 5 pre-merge checks passed.
+- No inline review comments or requested changes from CodeRabbit; no discoverability nit was raised, but added an ADR index (`docs/adr/README.md`) and cross-links from `README.md`/`CONTRIBUTING.md` proactively as a follow-up commit (`22fb69c`) since a maintainer would likely want the new `docs/adr/` directory to be reachable from the two files contributors already read.
 - Human maintainer (vineethwilson15) review still pending.
 
 **Status:** Awaiting review (automated review passed; awaiting human maintainer review)
@@ -458,15 +459,15 @@ Drafted all three ADRs in `docs/adr/` on branch `docs/add-adr-directory`, commit
 
 ### Technical Skills Gained
 
-*TBD*
+Learned to independently verify documentation against source rather than trusting that a draft was correct the day it was written. Concretely, this meant re-reading `core/graph/__init__.py`, `core/indexer/__init__.py`, and `core/config.py` a second time, after the PR was open, and diffing each ADR's specific claims (node labels, the `_deterministic_id` hash formula, env var defaults, what's and isn't in `docker-compose.yml`) against the literal current code rather than my memory of it from Phase II. Also learned to use `gh pr view --json reviews,comments,statusCheckRollup` to distinguish an automated bot approval (CodeRabbit) from an actual human maintainer review — a green check/approval isn't the same thing as "ready to merge" when the approver is a bot.
 
 ### Challenges Overcome
 
-*TBD*
+The GitHub API returned transient 503s ("No server is currently available to service your request") when fetching PR review/comment data via `gh api`; resolved by retrying rather than assuming the endpoint was wrong. The bigger judgment call was deciding how much to trust documentation I'd written myself two weeks earlier — the fix was to treat my own ADR drafts the same way I'd treat someone else's PR: verify every specific technical claim against current source instead of assuming it was still true.
 
 ### What I'd Do Differently Next Time
 
-*TBD*
+Add the ADR index (`docs/adr/README.md`) and cross-links from `README.md`/`CONTRIBUTING.md` in the original PR instead of as a follow-up commit. A reviewer looking at a new `docs/adr/` directory with no index and no incoming links would likely ask for exactly this, so doing it upfront would save a review round-trip.
 
 ---
 
